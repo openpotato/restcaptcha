@@ -1,0 +1,67 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Start PHP Server",
+            "type": "shell",
+            "command": "php",
+            "args": [
+                "-d",
+                "xdebug.mode=debug",
+                "-d",
+                "xdebug.start_with_request=yes",
+                "-S",
+                "localhost:8000",
+                "-t",
+                "${workspaceFolder}"
+            ],
+            "isBackground": true,
+            "problemMatcher": {
+                "owner": "php-server",
+                "pattern": {
+                    "regexp": ".*",
+                    "file": 1,
+                    "message": 1
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "\\[.*\\] PHP .* Development Server .*",
+                    "endsPattern": "started*"
+                }
+            }
+        },
+        {
+            "label": "Open Browser (Windows)",
+            "type": "shell",
+            "windows": {
+                "command": "cmd",
+                "args": [
+                    "/c",
+                    "start http://localhost:8000/index.php"
+                ]
+            },
+            "group": "none",
+            "problemMatcher": [],
+            "dependsOn": "Start PHP Server"
+        },
+        {
+            "label": "Open Browser (Unix)",
+            "type": "shell",
+            "linux": {
+                "command": "xdg-open",
+                "args": [
+                    "http://localhost:8000/index.php"
+                ]
+            },
+            "osx": {
+                "command": "open",
+                "args": [
+                    "http://localhost:8000/index.php"
+                ]
+            },
+            "group": "none",
+            "problemMatcher": [],
+            "dependsOn": "Start PHP Server"
+        }
+    ]
+}

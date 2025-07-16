@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "PHP Debug (with Browser - Windows)",
+      "type": "php",
+      "request": "launch",
+      "port": 9003,
+      "preLaunchTask": "Start PHP Server"
+    }
+  ]
+}
