@@ -1,0 +1,56 @@
+pool:
+  vmImage: 'windows-latest'
+
+stages:
+
+- stage: BuildAndTest  
+  jobs:
+  - job: 
+    variables:
+      BuildConfiguration: 'release'
+    steps:
+    - checkout: self
+      persistCredentials: true
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore'
+      inputs:
+        command: 'restore'
+        projects: 'demos/dotnet/CaptchaSample.sln'
+        feedsToUse: 'select'
+        vstsFeed: '340e7a34-33ea-4418-8b72-d55dcb74efa7/dd1a6c3c-4e29-44c2-a80d-9d6c7004ac57'
+    - task: DotNetCoreCLI@2
+      displayName: 'Build'
+      inputs:
+        command: 'build'
+        projects: 'demos/dotnet/CaptchaSample.sln'
+        arguments: '-c $(BuildConfiguration) --no-restore /p:ContinuousIntegrationBuild=true'
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish'
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        projects: 'demos/dotnet/src/CaptchaSample.csproj'
+        arguments: '-c $(BuildConfiguration) -o demos/dotnet/src/publish'
+        zipAfterPublish: false
+        modifyOutputPath: false
+    - task: ArchiveFiles@2
+      displayName: 'Create Zip archive for Sample'
+      inputs:
+        rootFolderOrFile: 'demos/dotnet/src/publish'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/CaptchaSample.zip'
+        replaceExistingArchive: true
+    - task: CopyFiles@2
+      displayName: 'Copy Maintenance Page'
+      inputs:
+        Contents: 'demos/dotnet/nginx-maintenance.html'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+        OverWrite: true
+        flattenFolders: true
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish build artifacts'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'drop'
+        publishLocation: 'Container'

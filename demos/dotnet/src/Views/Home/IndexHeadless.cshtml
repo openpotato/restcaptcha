@@ -1,0 +1,215 @@
+@model CaptchaSample.Models.LoginViewModel
+@{
+    ViewData["Title"] = "RESTCaptcha ASP.NET Core Headless Demo";
+
+    var jsClientUrl = ViewData["JsClientUrl"] as string;
+    var apiBaseUrl = ViewData["ApiBaseUrl"] as string;
+    var siteKey = ViewData["SiteKey"] as string;
+}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h2 class="h4 text-center mb-4">@ViewData["Title"]</h2>
+        <p>
+            This login screen is for demonstration purposes only. You can enter any username and/or password.
+        </p>
+        <div class="card shadow">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">Login</h2>
+
+                <!-- This is our form -->
+                <form asp-action="Login" id="restcaptcha-form" method="POST">
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-3">
+                        <label asp-for="Username" class="form-label">Username</label>
+                        <input asp-for="Username" type="text" name="username" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label">Password</label>
+                        <input asp-for="Password" type="password" name="password" class="form-control" required>
+                    </div>
+
+                    <!-- RESTCaptcha widget (headless mode, do not name it `restcaptcha-widget`) -->
+                    <div id="headless-restcaptcha-widget"></div>
+
+                    <!-- Our login button -->
+                    <button id="loginButton" type="submit" class="btn btn-primary w-100" disabled>Login</button>
+
+                </form>
+            </div>
+        </div>
+        <p class="d-flex justify-content-center align-items-center gap-2 mt-4">
+            <a href="index">Interactive mode</a>
+            <a href="index-auto">Auto mode</a>
+            <a href="index-invisible">Invisible mode</a>
+        </p>
+        <p class="d-flex justify-content-center align-items-center mt-4">
+            <small>Made with <a href="https://dotnet.microsoft.com/apps/aspnet">ASP .NET Core</a>. Source code on <a href="https://github.com/openpotato/restcaptcha">GitHub</a>.</small>
+        </p>
+    </div>
+</div>
+
+<script>
+
+    const widget = document.getElementById("headless-restcaptcha-widget");
+    const form = widget.closest("form");
+
+    // Initialize RESTCaptcha
+    const captcha = new HeadlessRestCaptcha("@apiBaseUrl", "@siteKey", "en");
+
+    // Set RESTCaptcha handlers
+    captcha.onStarted = () => {
+        renderSolvingUI();
+    };
+
+    captcha.onSolved = (token, solution) => {
+        injectTokenAndSolution(token, solution);
+        renderSolvedUI();
+        document.getElementById("loginButton").disabled = false;
+    };
+
+    captcha.onFailed = (errorMessage) => {
+        renderFailedUI(errorMessage);
+    };
+
+    captcha.onError = (exception) => {
+        renderErrorUI(exception.message);
+    };
+
+    captcha.onReset = (token) => {
+        removeTokenAndSolution();
+        renderInteractiveUI();
+        document.getElementById("loginButton").disabled = true;
+    };
+
+    // Start RESTCaptcha workflow
+    renderInteractiveUI();
+
+    // Renders the UI for interactive mode.
+    function renderInteractiveUI() {
+        widget.innerHTML = `
+        <div id="restcaptcha-interactive" class="alert alert-light" role="alert">
+            <div id="restcaptcha-interactive-body" class="form-check">
+                <input id="restcaptcha-interactive-checkbox" type="checkbox" class="form-check-input">
+                <label id="restcaptcha-interactive-checklabel" for="restcaptcha-interactive-checkbox" class="form-check-label">
+                    I am not a robot.
+                </label>
+            </div>
+        </div>
+        `;
+
+        // Start challenge when clicking the checkbox
+        const checkbox = document.getElementById(`restcaptcha-interactive-checkbox`);
+        checkbox?.addEventListener("click", async (event) => {
+        if (event.target.checked) {
+            await captcha.solve();
+        }
+        });
+    }
+
+    // Renders the UI for visualising the solving process.
+    function renderSolvingUI() {
+        widget.innerHTML = `
+        <div id="restcaptcha-solving" class="alert alert-light" role="alert">
+            <div id="restcaptcha-solving-body" class="d-flex align-items-center">
+                <div id=restcaptcha-solving-animation" class="spinner-border spinner-border-sm me-3" role="status" aria-hidden="true"></div>
+                <div id="restcaptcha-solving-text">
+                    Solving CAPTCHA challenge...
+                </div>
+            </div>
+        </div>
+        `;
+    }
+
+    // Renders the UI for visualising solved challenges.
+    function renderSolvedUI() {
+        widget.innerHTML = `
+        <div id="restcaptcha-success" class="alert alert-success" role="alert">
+            <div id="restcaptcha-success-body" class="d-flex align-items-center">
+                <div id="restcaptcha-success-text">
+                    &#128512; I am a human!
+                </div>
+            </div>
+        </div>
+        `;
+    }
+
+    // Renders the UI for visualising verification errors.
+    function renderFailedUI(errorMessage) {
+        widget.innerHTML = `
+        <div id="restcaptcha-failed" class="alert alert-warning" role="alert">
+            <div id="restcaptcha-failed-body" class="d-flex align-items-center">
+                <div id="restcaptcha-failed-text">
+                    &#128543; ${errorMessage} <a id="restcaptcha-reset-link" href="#">Try again</a>.
+                </div>
+            </div>
+        </div>
+        `;
+
+        // Resets the CAPTCHA workflow
+        const resetLink = document.getElementById(`restcaptcha-reset-link`);
+        resetLink?.addEventListener("click", async (event) => {
+        event.preventDefault();
+        const token = getToken();
+        if (token) {
+            captcha.reset(token);
+        } else {
+            captcha.notifyOnResetEvent(null);
+        }
+        });
+    }
+
+    // Renders the UI for visualising errors.
+    function renderErrorUI(errorMessage) {
+        widget.innerHTML = `
+        <div id="restcaptcha--error" class="alert alert-danger" role="alert">
+            <div id="restcaptcha--error-body" class="d-flex align-items-center">
+                <div id="restcaptcha-error-text">
+                    &#128558; ${errorMessage} <a id="restcaptcha-reset-link" href="#">Try Again</a>.
+                </div>
+            </div>
+        </div>
+        `;
+
+        // Resets the CAPTCHA workflow
+        const resetLink = document.getElementById(`restcaptcha-reset-link`);
+        resetLink?.addEventListener("click", async (event) => {
+            event.preventDefault();
+            const token = getToken();
+            if (token) {
+                captcha.reset(token);
+            } else {
+                captcha.notifyOnResetEvent(null);
+            }
+        });
+    }
+
+    // Retrieves the value of the hidden token input element for the widget.
+    function getToken() {
+        return document.getElementById(`restcaptcha-token`)?.value;
+    }
+
+    // Injects hidden input elements for the CAPTCHA token and solution into the parent
+    // form of the widget.
+    function injectTokenAndSolution(token, solution) {
+        form.insertAdjacentHTML("beforeend", `
+            <input id="restcaptcha-token" type="hidden" name="captcha-token" value="${token}">
+            <input id="restcaptcha-solution" type="hidden" name="captcha-solution" value="${solution}">
+        `);
+    }
+
+    // Removes the hidden token and solution input elements associated with the widget.
+    function removeTokenAndSolution() {
+        document.getElementById(`restcaptcha-token`)?.remove();
+        document.getElementById(`restcaptcha-solution`)?.remove();
+    }
+</script>
+
+<!-- Load restcaptcha.js script -->
+@section ScriptsBeforeHtml {
+    @if (!string.IsNullOrEmpty(jsClientUrl))
+    {
+        <script src="@jsClientUrl"></script>
+    }
+}

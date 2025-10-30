@@ -1,0 +1,10 @@
+[
+  {
+    "outputFileName": "wwwroot/restcaptcha.min.js",
+    "inputFiles": [ "wwwroot/restcaptcha.js" ],
+    "minify": {
+      "enabled": true,
+      "renameLocals": true
+    }
+  }
+]

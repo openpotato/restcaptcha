@@ -1,0 +1,56 @@
+pool:
+  vmImage: 'ubuntu-24.04'
+
+stages:
+
+- stage: Prepare  
+  jobs:
+  - job: 
+    steps:
+    - checkout: self
+    - script: |
+
+        # Fail fast
+        set -euo pipefail
+
+        # Echo PHP and Composer versions
+        php -v
+        composer --version
+
+        # Install dependencies 
+        composer validate --no-interaction --no-ansi --no-check-publish
+        composer install --no-dev --no-interaction --prefer-dist --no-progress --no-ansi
+        
+      displayName: 'Install dependencies'
+      workingDirectory: demos/php
+    - task: CopyFiles@2
+      displayName: 'Stage Sample files'
+      inputs:
+        SourceFolder: 'demos/php'
+        Contents: |
+          config/**
+          vendor/**
+          public/*.php
+        TargetFolder: 'demos/php/publish'
+        OverWrite: true
+    - task: ArchiveFiles@2
+      displayName: 'Create Zip archive for Sample'
+      inputs:
+        rootFolderOrFile: 'demos/php/publish'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/CaptchaSample.zip'
+        replaceExistingArchive: true
+    - task: CopyFiles@2
+      displayName: 'Copy Maintenance Page'
+      inputs:
+        Contents: 'demos/php/nginx-maintenance.html'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+        OverWrite: true
+        flattenFolders: true
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish build artifacts'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'drop'
+        publishLocation: 'Container'

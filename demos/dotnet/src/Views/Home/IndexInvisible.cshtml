@@ -1,0 +1,95 @@
+@using System.Text.Encodings.Web
+@using RestCaptcha
+@model CaptchaSample.Models.LoginViewModel
+@{
+    ViewData["Title"] = "RESTCaptcha ASP.NET Core Invisible Mode Demo";
+
+    var jsClientUrl = ViewData["JsClientUrl"] as string;
+    var apiBaseUrl = ViewData["ApiBaseUrl"] as string;
+    var siteKey = ViewData["SiteKey"] as string;
+    var aboutLink = ViewData["AboutLink"] as ExternalLink;
+}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h2 class="h4 text-center mb-4">@ViewData["Title"]</h2>
+        <p>
+            This login screen is for demonstration purposes only. You can enter any username and/or password.
+        </p>
+        <div class="card shadow">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">Login</h2>
+
+                <!-- This is our form -->
+                <form asp-action="Login" id="restcaptcha-form" method="POST">
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-3">
+                        <label asp-for="Username" class="form-label">Username</label>
+                        <input asp-for="Username" type="text" name="username" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label">Password</label>
+                        <input asp-for="Password" type="password" name="password" class="form-control" required>
+                    </div>
+
+                    <!-- RESTCaptcha widget (invisible mode) -->
+                    <div id="restcaptcha-widget"
+                         data-api-baseurl="@apiBaseUrl"
+                         data-sitekey="@siteKey"
+                         data-widget-language="en"
+                         data-widget-mode="invisible"
+                         data-widget-css-failed="alert alert-warning"
+                         data-widget-css-failed-body="d-flex align-items-center"
+                         data-widget-css-failed-icon="me-2"
+                         data-widget-css-error="alert alert-danger"
+                         data-widget-css-error-body="d-flex align-items-center"
+                         data-widget-css-error-icon="me-2"
+                         data-widget-css-footer="d-flex justify-content-end align-items-center mt-3 mb-1 gap-2"
+                         data-widget-css-links="d-flex gap-2"
+                         data-widget-css-link-external="link-secondary link-offset-1"
+                         data-widget-css-link-reset="link-offset-1"
+                         data-callback-solved="onSolved"
+                         data-callback-reset="onReset"
+                         data-widget-external-link1-href="@HtmlEncoder.Default.Encode(aboutLink.HRef.ToString())"
+                         data-widget-external-link1-text="@aboutLink.Text">
+                    </div>
+
+                    <!-- Our login button -->
+                    <button id="loginButton" type="submit" class="btn btn-primary w-100" disabled>Login</button>
+
+                </form>
+            </div>
+        </div>
+        <p class="d-flex justify-content-center align-items-center gap-2 mt-4">
+            <a href="index">Interactive mode</a>
+            <a href="index-auto">Auto mode</a>
+            <a href="index-headless">Headless mode</a>
+        </p>
+        <p class="d-flex justify-content-center align-items-center mt-4">
+            <small>Made with <a href="https://dotnet.microsoft.com/apps/aspnet">ASP .NET Core</a>. Source code on <a href="https://github.com/openpotato/restcaptcha">GitHub</a>.</small>
+        </p>
+    </div>
+</div>
+
+<script>
+
+    // Enable login button
+    function onSolved(token, solution) {
+      document.getElementById("loginButton").disabled = false;
+    }
+
+    // Disable login button
+    function onReset(token) {
+      document.getElementById("loginButton").disabled = true;
+    }
+
+</script>
+
+<!-- Load restcaptcha.js script -->
+@section ScriptsAfterHtml {
+    @if (!string.IsNullOrEmpty(jsClientUrl))
+    {
+        <script src="@jsClientUrl"></script>
+    }
+}
