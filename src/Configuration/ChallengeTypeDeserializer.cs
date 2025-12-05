@@ -62,24 +62,24 @@ namespace RestCaptcha
                         "hash-sha-256" => ProofOfWorkAlgorithm.SHA256,
                         "hash-sha-384" => ProofOfWorkAlgorithm.SHA384,
                         "hash-sha-512" => ProofOfWorkAlgorithm.SHA512,
-                        _ => throw new ArgumentException($"Invalid status value: {algorithmValue}"),
+                        _ => throw new ArgumentException($"Invalid algorithm value: {algorithmValue}"),
                     };
                 }
                 else 
                 {
-                    throw new ArgumentException($"Invalid status value: {algorithmValue}");
+                    throw new ArgumentException($"Invalid algorithm value: {algorithmValue}");
                 }
             }
 
             if (dict.TryGetValue(PropertyNames.Difficulty, out var difficultyValue))
             {
-                if (difficultyValue is string difficultyStrValue)
+                if (difficultyValue is int difficultyIntValue)
                 {
-                    result.Difficulty = int.Parse(difficultyStrValue);
+                    result.Difficulty = difficultyIntValue;
                 }
                 else
                 {
-                    throw new ArgumentException($"Invalid status value: {difficultyValue}");
+                    throw new ArgumentException($"Invalid difficulty value: {difficultyValue}");
                 }
             }
 
