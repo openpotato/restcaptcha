@@ -82,6 +82,7 @@ namespace RestCaptcha
         [HttpGet("challenge")]
         [ProducesResponseType(typeof(ChallengeResponse), statusCode: StatusCodes.Status200OK, MediaTypeNames.Application.Json, MediaTypeNames.Text.Json, MediaTypeNames.Text.Plain)]
         [ProducesResponseType(typeof(ProblemDetails), statusCode: StatusCodes.Status400BadRequest, MediaTypeNames.Application.ProblemDetails)]
+        [ProducesResponseType(typeof(ProblemDetails), statusCode: StatusCodes.Status403Forbidden, MediaTypeNames.Application.ProblemDetails)]
         [ProducesResponseType(typeof(ProblemDetails), statusCode: StatusCodes.Status404NotFound, MediaTypeNames.Application.ProblemDetails)]
         [ProducesResponseType(typeof(ProblemDetails), statusCode: StatusCodes.Status500InternalServerError, MediaTypeNames.Application.ProblemDetails)]
         public async Task<IActionResult> GetChallenge(

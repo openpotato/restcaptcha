@@ -46,7 +46,6 @@ namespace RestCaptcha
         /// </summary>
         DROP,
 
-
         /// <summary>
         /// Policy Block List
         /// </summary>
