@@ -19,32 +19,22 @@
  */
 #endregion
 
-using System.Text.Json.Serialization;
+using System.Net;
 
 namespace RestCaptcha
 {
     /// <summary>
-    /// Proof-of-work algorithm
+    /// DNS lookup client
     /// </summary>
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public enum ProofOfWorkAlgorithm
+    public interface IDnsClient
     {
         /// <summary>
-        /// SHA 256 based hash algorithm
+        /// Resolves a host name or IP address to an <see cref="IPHostEntry"/> instance.
         /// </summary>
-        [JsonStringEnumMemberName(TypeConsts.SHA256)]
-        SHA256,
-
-        /// <summary>
-        /// SHA 384 based hash algorithm
-        /// </summary>
-        [JsonStringEnumMemberName(TypeConsts.SHA384)]
-        SHA384,
-
-        /// <summary>
-        /// SHA 512 based hash algorithm
-        /// </summary>
-        [JsonStringEnumMemberName(TypeConsts.SHA512)]
-        SHA512
+        /// <param name="hostNameOrAddress">The host name or IP address to resolve.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>A task that represents the asynchronous operation. The value of the TResult parameter 
+        /// contains a <see cref="IPHostEntry"/> instance.</returns>
+        public Task<IPHostEntry> GetHostEntryAsync(string hostNameOrAddress, CancellationToken cancellationToken);
     }
 }

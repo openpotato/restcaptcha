@@ -19,32 +19,31 @@
  */
 #endregion
 
-using System.Text.Json.Serialization;
-
 namespace RestCaptcha
 {
     /// <summary>
-    /// Proof-of-work algorithm
+    /// Behavior configuration
     /// </summary>
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public enum ProofOfWorkAlgorithm
+    public class Behavior
     {
         /// <summary>
-        /// SHA 256 based hash algorithm
+        /// Defined action
         /// </summary>
-        [JsonStringEnumMemberName(TypeConsts.SHA256)]
-        SHA256,
+        public ActionType Action { get; set; }
 
         /// <summary>
-        /// SHA 384 based hash algorithm
+        /// Challenge type as key/value storage to support polymorphic objects via IConfiguration
         /// </summary>
-        [JsonStringEnumMemberName(TypeConsts.SHA384)]
-        SHA384,
+        public Dictionary<string, object> ChallengeType { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
-        /// SHA 512 based hash algorithm
+        /// Maximum risk score
         /// </summary>
-        [JsonStringEnumMemberName(TypeConsts.SHA512)]
-        SHA512
+        public int MaxRiskScore { get; set; }
+
+        /// <summary>
+        /// Minimum risk score
+        /// </summary>
+        public int MinRiskScore { get; set; }
     }
 }

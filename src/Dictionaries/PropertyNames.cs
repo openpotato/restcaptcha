@@ -26,6 +26,8 @@ namespace RestCaptcha
     /// </summary>
     public static class PropertyNames
     {
+        public const string Algorithm = "algorithm";
+        public const string Difficulty = "difficulty";
         public const string Type = "type";
     }
 }

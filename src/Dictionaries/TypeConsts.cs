@@ -30,6 +30,21 @@ namespace RestCaptcha
         /// Proof-of-work
         /// </summary>
         public const string ProofOfWork = "proofOfWork";
+
+        /// <summary>
+        /// SHA 256 based hash algorithm
+        /// </summary>
+        public const string SHA256 = "hash-sha-256";
+
+        /// <summary>
+        /// SHA 384 based hash algorithm
+        /// </summary>
+        public const string SHA384 = "hash-sha-384";
+
+        /// <summary>
+        /// SHA 512 based hash algorithm
+        /// </summary>
+        public const string SHA512 = "hash-sha-512";
     }
 }
 

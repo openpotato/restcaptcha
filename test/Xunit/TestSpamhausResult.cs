@@ -19,30 +19,31 @@
  */
 #endregion
 
-using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
+using Xunit;
 
-namespace RestCaptcha
+namespace RestCaptcha.Tests
 {
-    /// <summary>
-    /// Representation of a verify request
-    /// </summary>
-    public class ResetRequest
+    public class SpamhausResultTests
     {
-        /// <summary>
-        /// The original nonce from the challenge request
-        /// </summary>
-        [Required(ErrorMessage = "missingToken")]
-        [JsonPropertyOrder(1)]
-        public string Token { get; set; }
-
-        /// <summary>
-        /// Compact string representation of the instance
-        /// </summary>
-        /// <returns>A string</returns>
-        public override string ToString()
+        [Fact]
+        public void SpamhausResult_Defaults_AndProperties_Work()
         {
-            return $"token \"{Token}\"";
+            // Prepare
+            var result = new SpamhausCheckResult();
+
+            // Assert defaults
+            Assert.Equal(SpamhausDatabase.NotListed, result.Database);
+            Assert.Equal(string.Empty, result.IpAddress);
+            Assert.Null(result.RawReturnAddress);
+
+            // Set and re-check
+            result.Database = SpamhausDatabase.SBL;
+            result.IpAddress = "1.2.3.4";
+            result.RawReturnAddress = "127.0.0.2";
+
+            Assert.Equal(SpamhausDatabase.SBL, result.Database);
+            Assert.Equal("1.2.3.4", result.IpAddress);
+            Assert.Equal("127.0.0.2", result.RawReturnAddress);
         }
     }
 }

@@ -62,11 +62,11 @@ namespace RestCaptcha
         /// Leave empty only if public access or using private-only access.
         /// </summary>
         [JsonPropertyOrder(4)]
-        public string[] Keys { get; set; } = [];
+        public string[] ApiKeys { get; set; } = [];
 
         /// <summary>
         /// If true, the endpoint is private: only loopback and <see cref="AllowCidrs"/> sources are permitted;
-        /// <see cref="Keys"/> is ignored and public access is denied.
+        /// <see cref="ApiKeys"/> is ignored and public access is denied.
         /// </summary>
         [JsonPropertyOrder(1)]
         public bool PrivateOnly { get; set; } = false;

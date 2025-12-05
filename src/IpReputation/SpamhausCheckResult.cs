@@ -19,32 +19,37 @@
  */
 #endregion
 
-using System.Text.Json.Serialization;
+using System.Security.Cryptography;
 
 namespace RestCaptcha
 {
     /// <summary>
-    /// Proof-of-work algorithm
+    /// Represents the result of a Spamhaus service IP check
     /// </summary>
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public enum ProofOfWorkAlgorithm
+    public sealed class SpamhausCheckResult
     {
         /// <summary>
-        /// SHA 256 based hash algorithm
+        /// Which list the IP hit?
         /// </summary>
-        [JsonStringEnumMemberName(TypeConsts.SHA256)]
-        SHA256,
+        public SpamhausDatabase Database { get; set; }
 
         /// <summary>
-        /// SHA 384 based hash algorithm
+        /// The IP address that's being checked.
         /// </summary>
-        [JsonStringEnumMemberName(TypeConsts.SHA384)]
-        SHA384,
+        public string IpAddress { get; set; } = string.Empty;
 
         /// <summary>
-        /// SHA 512 based hash algorithm
+        /// The raw 127.x.x.x address returned by Spamhaus, if any.
         /// </summary>
-        [JsonStringEnumMemberName(TypeConsts.SHA512)]
-        SHA512
+        public string RawReturnAddress { get; set; }
+
+        /// <summary>
+        /// Compact string representation of the challenge type
+        /// </summary>
+        /// <returns>A string</returns>
+        public override string ToString()
+        {
+            return $"{IpAddress}:{Database}";
+        }
     }
 }

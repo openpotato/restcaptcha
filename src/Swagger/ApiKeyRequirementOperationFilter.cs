@@ -20,7 +20,7 @@
 #endregion
 
 using Enbrea.ApiKey;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace RestCaptcha
@@ -40,18 +40,12 @@ namespace RestCaptcha
 
             operation.Security.Add(new OpenApiSecurityRequirement
             {
-                [new OpenApiSecurityScheme
-                {
-                    Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "ApiKeyHeader" }
-                }] = Array.Empty<string>()
+                [new OpenApiSecuritySchemeReference("ApiKeyHeader")] = []
             });
 
             operation.Security.Add(new OpenApiSecurityRequirement
             {
-                [new OpenApiSecurityScheme
-                {
-                    Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "ApiKeyAuthorizationHeader" }
-                }] = Array.Empty<string>()
+                [new OpenApiSecuritySchemeReference("ApiKeyAuthorizationHeader")] = []
             });
         }
     }

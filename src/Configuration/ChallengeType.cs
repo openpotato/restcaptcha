@@ -26,7 +26,8 @@ namespace RestCaptcha
     /// <summary>
     /// An abstract challenge type
     /// </summary>
-    [JsonConverter(typeof(ChallengeTypeConverter))]
+    [JsonPolymorphic(TypeDiscriminatorPropertyName = PropertyNames.Type)]
+    [JsonDerivedType(typeof(ProofOfWork), TypeConsts.ProofOfWork)]
     public abstract class ChallengeType
     {
     }

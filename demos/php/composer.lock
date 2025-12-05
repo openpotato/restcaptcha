@@ -395,16 +395,16 @@
         },
         {
             "name": "openpotato/restcaptcha-client",
-            "version": "0.2.0",
+            "version": "0.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/openpotato/restcaptcha-client.php.git",
-                "reference": "db3890511dfc8608edfcd60ab275afb3c709ae9c"
+                "reference": "28bbd256a3af4c1856058a4b276b65fea57ddbf7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/openpotato/restcaptcha-client.php/zipball/db3890511dfc8608edfcd60ab275afb3c709ae9c",
-                "reference": "db3890511dfc8608edfcd60ab275afb3c709ae9c",
+                "url": "https://api.github.com/repos/openpotato/restcaptcha-client.php/zipball/28bbd256a3af4c1856058a4b276b65fea57ddbf7",
+                "reference": "28bbd256a3af4c1856058a4b276b65fea57ddbf7",
                 "shasum": ""
             },
             "require": {
@@ -439,9 +439,9 @@
             ],
             "support": {
                 "issues": "https://github.com/openpotato/restcaptcha-client.php/issues",
-                "source": "https://github.com/openpotato/restcaptcha-client.php/tree/0.2.0"
+                "source": "https://github.com/openpotato/restcaptcha-client.php/tree/0.2.1"
             },
-            "time": "2025-10-30T13:54:45+00:00"
+            "time": "2025-12-05T09:52:34+00:00"
         },
         {
             "name": "phpoption/phpoption",

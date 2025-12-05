@@ -19,32 +19,15 @@
  */
 #endregion
 
-using System.Text.Json.Serialization;
-
-namespace RestCaptcha
+namespace RestCaptcha.Tests
 {
-    /// <summary>
-    /// Proof-of-work algorithm
-    /// </summary>
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public enum ProofOfWorkAlgorithm
+    public class TestFixture
     {
-        /// <summary>
-        /// SHA 256 based hash algorithm
-        /// </summary>
-        [JsonStringEnumMemberName(TypeConsts.SHA256)]
-        SHA256,
+        public string AbuseIpDbApiKey { get; }
 
-        /// <summary>
-        /// SHA 384 based hash algorithm
-        /// </summary>
-        [JsonStringEnumMemberName(TypeConsts.SHA384)]
-        SHA384,
-
-        /// <summary>
-        /// SHA 512 based hash algorithm
-        /// </summary>
-        [JsonStringEnumMemberName(TypeConsts.SHA512)]
-        SHA512
+        public TestFixture()
+        {
+            AbuseIpDbApiKey = Environment.GetEnvironmentVariable("ABUSEIPDB_APIKEY") ?? throw new InvalidOperationException("AbuseIpDb API key missing.");
+        }
     }
 }

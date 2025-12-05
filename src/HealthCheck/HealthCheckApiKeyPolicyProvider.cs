@@ -50,7 +50,7 @@ namespace RestCaptcha
             {
                 return new ApiKeyPolicy()
                 {
-                    Keys = _configuration.HealthCheck.Keys,
+                    Keys = _configuration.HealthCheck.ApiKeys,
                     PrivateOnly = _configuration.HealthCheck.PrivateOnly,
                     AllowLocal = _configuration.HealthCheck.AllowLocal,
                     AllowCidrs = _configuration.HealthCheck.AllowCidrs
