@@ -29,22 +29,7 @@ namespace RestCaptcha
         /// <summary>
         /// Map of behaviors by score ranges
         /// </summary>
-        public List<Behavior> BehaviorMap { get; set; } = [
-            new Behavior() { 
-                MinRiskScore = 0, 
-                MaxRiskScore = 75, 
-                Action = ActionType.Challenge, 
-                ChallengeType = new Dictionary<string, object>
-                {
-                    [PropertyNames.Type] = TypeConsts.ProofOfWork,
-                    [PropertyNames.Algorithm] = TypeConsts.SHA256,
-                    [PropertyNames.Difficulty] = 4
-                } },
-            new Behavior() {
-                MinRiskScore = 75,
-                MaxRiskScore = 100,
-                Action = ActionType.Block }
-        ];
+        public List<Behavior> BehaviorMap { get; set; } = [];
 
         /// <summary>
         /// Health check configuration

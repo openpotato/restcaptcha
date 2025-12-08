@@ -77,6 +77,10 @@ namespace RestCaptcha
                 {
                     result.Difficulty = difficultyIntValue;
                 }
+                else if (difficultyValue is string difficultyStrValue)
+                {
+                    result.Difficulty = int.Parse(difficultyStrValue);
+                }
                 else
                 {
                     throw new ArgumentException($"Invalid difficulty value: {difficultyValue}");
