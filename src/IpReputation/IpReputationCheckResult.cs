@@ -19,32 +19,16 @@
  */
 #endregion
 
-using System.Text.Json.Serialization;
-
 namespace RestCaptcha
 {
     /// <summary>
-    /// Proof-of-work algorithm
+    /// Represents the result of a Spamhaus service IP check
     /// </summary>
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public enum ProofOfWorkAlgorithm
+    public sealed class IpReputationCheckResult
     {
         /// <summary>
-        /// SHA 256 based hash algorithm
+        /// Which list the IP hit?
         /// </summary>
-        [JsonStringEnumMemberName(TypeConsts.SHA256)]
-        SHA256,
-
-        /// <summary>
-        /// SHA 384 based hash algorithm
-        /// </summary>
-        [JsonStringEnumMemberName(TypeConsts.SHA384)]
-        SHA384,
-
-        /// <summary>
-        /// SHA 512 based hash algorithm
-        /// </summary>
-        [JsonStringEnumMemberName(TypeConsts.SHA512)]
-        SHA512
+        public int RiskScore { get; init; }
     }
 }

@@ -38,6 +38,6 @@ namespace RestCaptcha
         InvalidToken,
 
         [JsonStringEnumMemberName("invalid-solution")]
-        InvalidSolution
+        InvalidSolution,
     }
 }

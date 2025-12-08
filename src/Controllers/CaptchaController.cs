@@ -41,6 +41,7 @@ namespace RestCaptcha
     public class CaptchaController : ControllerBase
     {
         private readonly AppConfiguration _configuration;
+        private readonly IpReputationCheck _ipReputationCheck;
         private readonly IStringLocalizer<SharedResource> _localizer;
         private readonly ILogger<CaptchaController> _logger;
         private readonly IMemoryCache _nonceCache;
@@ -52,42 +53,50 @@ namespace RestCaptcha
         /// <param name="logger">Injected logger</param>
         /// <param name="localizer">Injected  localizer</param>
         /// <param name="configuration">Injected app configuration</param>
-        /// <param name="nonceCache">Injected cahce for generated nonces</param>
+        /// <param name="httpClient">Injected HTTP client</param>
+        /// <param name="dnsClient">Injected DNS client</param>
+        /// <param name="cache">Injected cache for generated nonces</param>
         public CaptchaController(
             ILogger<CaptchaController> logger,
             IStringLocalizer<SharedResource> localizer,
             IOptionsMonitor<AppConfiguration> configuration,
-            IMemoryCache nonceCache)
+            HttpClient httpClient,
+            IDnsClient dnsClient,
+            IMemoryCache cache)
             : base()
         {
             _logger = logger;
             _localizer = localizer;
             _configuration = configuration.CurrentValue;
-            _nonceCache = nonceCache;
+            _nonceCache = cache;
             _nonceCacheEntryOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(_configuration.NonceMaxTTL);
+            _ipReputationCheck = new IpReputationCheck(httpClient, dnsClient, cache, _configuration.IpReputationCheck, logger);
         }
 
         /// <summary>
         /// Generates a CAPTCHA challenge for a client.
         /// </summary>
         /// <param name="siteKey">Site key</param>
+        /// <param name="cancellationToken">A cancellation token</param>
         /// <returns>A <see cref="ChallengeResponse"/> object</returns>
         [HttpGet("challenge")]
         [ProducesResponseType(typeof(ChallengeResponse), statusCode: StatusCodes.Status200OK, MediaTypeNames.Application.Json, MediaTypeNames.Text.Json, MediaTypeNames.Text.Plain)]
         [ProducesResponseType(typeof(ProblemDetails), statusCode: StatusCodes.Status400BadRequest, MediaTypeNames.Application.ProblemDetails)]
+        [ProducesResponseType(typeof(ProblemDetails), statusCode: StatusCodes.Status403Forbidden, MediaTypeNames.Application.ProblemDetails)]
         [ProducesResponseType(typeof(ProblemDetails), statusCode: StatusCodes.Status404NotFound, MediaTypeNames.Application.ProblemDetails)]
         [ProducesResponseType(typeof(ProblemDetails), statusCode: StatusCodes.Status500InternalServerError, MediaTypeNames.Application.ProblemDetails)]
-        public IActionResult GetChallenge(
-            [FromQuery, Required(ErrorMessage = "missingSiteKey")] string siteKey)
+        public async Task<IActionResult> GetChallenge(
+            [FromQuery, Required(ErrorMessage = "missingSiteKey")] string siteKey,
+            CancellationToken cancellationToken = default)
         {
             // Get host name of incoming request
             var originHostName = GetOriginHostName(Request);
 
-            // Check site
+            // Check site key
             var site = _configuration.Sites.FirstOrDefault(x => x.SiteKey == siteKey);
             if (site == null)
             {
-                _logger.LogWarning("Request for {originDomain} not proceesed: Invalid {SiteKey} provided.", originHostName, siteKey);
+                _logger.LogWarning("Request for {OriginHostName} not proceesed: Invalid {SiteKey} provided.", originHostName, siteKey);
 
                 return Problem(
                     statusCode: StatusCodes.Status404NotFound,
@@ -97,13 +106,13 @@ namespace RestCaptcha
             }
 
             // Check domain name
-            if ((site.ValidHostNames != null) && (site.ValidHostNames.Length > 0))
+            if ((site.ValidHostNames is not null) && (site.ValidHostNames.Length > 0))
             {
                 var normalizedDomainNames = site.ValidHostNames.Select(d => d.ToLowerInvariant()).ToHashSet();
 
                 if (!StringHelper.Match(originHostName, normalizedDomainNames))
                 {
-                    _logger.LogWarning("Request not verified for domain {domain}: Domain not registered.", originHostName);
+                    _logger.LogWarning("Request not verified for domain {OriginHostName}: Domain not registered.", originHostName);
 
                     return Problem(
                         statusCode: StatusCodes.Status401Unauthorized,
@@ -113,20 +122,71 @@ namespace RestCaptcha
                 }
             }
 
-            // Generate challenge response
-            var nonce = Guid.NewGuid().ToString("N");
-            var nonceTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            var nonceSignature = GenerateNonceSignature(nonce, nonceTimestamp, _configuration.HMACKey);
-            var token = new Token(nonce, nonceSignature);
-            var challengeAlgorithm = _configuration.ChallengeType;
-            var responseData = new ChallengeResponse(token.ToString(), challengeAlgorithm);
+            var riskScore = 0;
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
-            // Cache none with timestamp and hostname
-            _nonceCache.Set(nonce, Tuple.Create(nonceTimestamp, originHostName), _nonceCacheEntryOptions);
+            // Check IP reputation
+            if (!string.IsNullOrEmpty(ipAddress))
+            {
+                try
+                {
+                    var checkResult = await _ipReputationCheck.CheckAsync(ipAddress, cancellationToken);
 
-            _logger.LogInformation("Challenge for {originDomain} sucessfully generated: {Response}.", originHostName, responseData);
+                    if (checkResult is not null)
+                    {
+                        riskScore = checkResult.RiskScore;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError("IP reputation check failed with exception: {ex}", ex);
+                }
+            }
 
-            return Ok(responseData);
+            // Find right behavior
+            var behavior = _configuration.BehaviorMap?.FirstOrDefault(x => riskScore >= x.MinRiskScore && riskScore <= x.MaxRiskScore);
+
+            // Challenge by behavior
+            if (behavior is not null)
+            {
+                if (behavior.Action != ActionType.Block)
+                {
+                    // Get challenge type from configuration
+                    var challengeType = behavior.ChallengeType.CreateChallengeTypeObject();
+
+                    // Generate challenge response
+                    var nonce = Guid.NewGuid().ToString("N");
+                    var nonceTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                    var nonceSignature = GenerateNonceSignature(nonce, nonceTimestamp, _configuration.HMACKey);
+                    var token = new Token(nonce, nonceSignature);
+                    var responseData = new ChallengeResponse(token.ToString(), challengeType);
+
+                    // Cache challenge data
+                    _nonceCache.Set(nonce, Tuple.Create(nonceTimestamp, originHostName, challengeType), _nonceCacheEntryOptions);
+
+                    _logger.LogInformation("Challenge for {OriginHostName} sucessfully generated: {Response}.", originHostName, responseData);
+
+                    return Ok(responseData);
+                }
+                else
+                {
+                    return Problem(
+                        statusCode: StatusCodes.Status403Forbidden,
+                        type: "https://tools.ietf.org/html/rfc9110#section-15.5.4",
+                        title: _localizer["blockedRequest"]
+                    );
+                }
+            }
+            else
+            {
+                _logger.LogError("No behavior definied.");
+
+                return Problem(
+                    statusCode: StatusCodes.Status500InternalServerError,
+                    type: "https://tools.ietf.org/html/rfc9110#section-15.6.1",
+                    title: _localizer["missingBehavior"]
+                );
+            }
         }
 
         /// <summary>
@@ -136,7 +196,7 @@ namespace RestCaptcha
         /// <param name="requestData">A <see cref="ResetRequest"/> object</param>
         /// <returns>The created <see cref="ObjectResult"/> for the response.</returns>
         [HttpPost("reset")]
-        [Consumes(typeof(VerifyRequest), MediaTypeNames.Application.Json, MediaTypeNames.Text.Json, MediaTypeNames.Text.Plain)]
+        [Consumes(typeof(ResetRequest), MediaTypeNames.Application.Json, MediaTypeNames.Text.Json, MediaTypeNames.Text.Plain)]
         [ProducesResponseType(statusCode: StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), statusCode: StatusCodes.Status400BadRequest, MediaTypeNames.Application.ProblemDetails)]
         [ProducesResponseType(typeof(ProblemDetails), statusCode: StatusCodes.Status404NotFound, MediaTypeNames.Application.ProblemDetails)]
@@ -148,11 +208,11 @@ namespace RestCaptcha
             // Get host name of incoming request
             var originHostName = GetOriginHostName(Request);
 
-            // Check site
+            // Check site key
             var site = _configuration.Sites.FirstOrDefault(x => x.SiteKey == siteKey);
             if (site == null)
             {
-                _logger.LogWarning("{Request} not for {originDomain} proceesed: Invalid {SiteKey} provided.", requestData, originHostName, siteKey);
+                _logger.LogWarning("{Request} not for {OriginHostName} proceesed: Invalid {SiteKey} provided.", requestData, originHostName, siteKey);
 
                 return Problem(
                     statusCode: StatusCodes.Status404NotFound,
@@ -168,7 +228,7 @@ namespace RestCaptcha
 
                 if (!StringHelper.Match(originHostName, normalizedDomainNames))
                 {
-                    _logger.LogWarning("{Request} not verified for domain {domain}: Domain not registered.", requestData, originHostName);
+                    _logger.LogWarning("{Request} not verified for domain {OriginHostName}: Domain not registered.", requestData, originHostName);
 
                     return Problem(
                         statusCode: StatusCodes.Status401Unauthorized,
@@ -186,13 +246,13 @@ namespace RestCaptcha
             {
                 _nonceCache.Remove(tokenToBeReset.Nonce);
 
-                _logger.LogInformation("{Request} for {originDomain} successfully proceesed", requestData, originHostName);
+                _logger.LogInformation("{Request} for {OriginHostName} successfully proceesed", requestData, originHostName);
 
                 return Ok(new ResetResponse(VerifyStatus.Success));
             }
             else
             {
-                _logger.LogWarning("{Request} for {originDomain} not proceesed: Nonce already used or expired.", requestData, originHostName);
+                _logger.LogWarning("{Request} for {OriginHostName} not proceesed: Nonce already used or expired.", requestData, originHostName);
 
                 return Ok(new ResetResponse(VerifyStatus.InvalidToken));
             }
@@ -215,7 +275,7 @@ namespace RestCaptcha
             [FromQuery, Required(ErrorMessage = "missingSiteKey")] string siteKey,
             [FromBody, Required(ErrorMessage = "missingPayload")] VerifyRequest requestData)
         {
-            // Check site
+            // Check site key
             var site = _configuration.Sites.FirstOrDefault(x => x.SiteKey == siteKey);
             if (site == null)
             {
@@ -244,7 +304,7 @@ namespace RestCaptcha
             var tokenToBeVerified = Token.FromValue(requestData.Token);
 
             // If nonce exists...
-            if (_nonceCache.TryGetValue(tokenToBeVerified.Nonce, out Tuple<long, string> nonceCacheEntry))
+            if (_nonceCache.TryGetValue(tokenToBeVerified.Nonce, out Tuple<long, string, ChallengeType> nonceCacheEntry))
             {
                 // Remove nonce from chache
                 _nonceCache.Remove(tokenToBeVerified.Nonce);
@@ -252,6 +312,7 @@ namespace RestCaptcha
                 // Get cached values
                 var nonceTimeStamp = nonceCacheEntry.Item1;
                 var nonceHostName = nonceCacheEntry.Item2;
+                var challengeType = nonceCacheEntry.Item3;
 
                 // Get current timestamp
                 var currentTimeStamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -273,7 +334,7 @@ namespace RestCaptcha
                 }
 
                 // Check provided solution
-                if (_configuration.ChallengeType is ProofOfWork proofOfWork)
+                if (challengeType is ProofOfWork proofOfWork)
                 {
                     var hex = GenerateSolutionHash(proofOfWork.Algorithm, tokenToBeVerified.Nonce, requestData.Solution);
 
@@ -292,9 +353,9 @@ namespace RestCaptcha
                 }
                 else
                 {
-                    _logger.LogError("{Request} not verified: Challenge type not definied.", requestData);
+                    _logger.LogError("{Request} not verified: Challenge type not supported.", requestData);
 
-                    throw new ArgumentException("Challenge type not definied.");
+                    throw new ArgumentException("Challenge type not supported.");
                 }
             }
             else

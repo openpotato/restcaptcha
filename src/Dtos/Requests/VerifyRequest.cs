@@ -30,14 +30,7 @@ namespace RestCaptcha
     public class VerifyRequest
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="VerifyRequest"/> class.
-        /// </summary>
-        public VerifyRequest()
-        {
-        }
-
-        /// <summary>
-        /// The original nonce from the challenge request
+        /// The IP address of the client on which the solution was calculated
         /// </summary>
         [JsonPropertyOrder(4)]
         public string CallerIp { get; set; }
@@ -50,14 +43,14 @@ namespace RestCaptcha
         public string SiteSecret { get; set; }
 
         /// <summary>
-        /// The original nonce from the challenge request
+        /// The challenge solution to be verified
         /// </summary>
         [Required(ErrorMessage = "missingSolution")]
         [JsonPropertyOrder(3)]
         public string Solution { get; set; }
 
         /// <summary>
-        /// The original nonce from the challenge request
+        /// The challenge token
         /// </summary>
         [Required(ErrorMessage = "missingToken")]
         [JsonPropertyOrder(2)]

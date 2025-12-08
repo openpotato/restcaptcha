@@ -28,7 +28,7 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using RestCaptcha;
 using Serilog;
 using System.Net;
@@ -87,8 +87,14 @@ builder.Services
 // Add exception handling
 builder.Services.AddProblemDetails();
 
-// Add memory cache
+// Add cache
 builder.Services.AddMemoryCache();
+
+// Add HTTP client
+builder.Services.AddHttpClient<AbuseIpDbClient>();
+
+// Add DNS client
+builder.Services.AddScoped<IDnsClient, DnsClient>();
 
 // Add API versioning
 builder.Services.

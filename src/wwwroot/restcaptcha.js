@@ -465,14 +465,13 @@ class HeadlessRestCaptcha {
                     const hex = [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, "0")).join("");
                     attempts++;
                     if (hex.startsWith("0".repeat(difficulty))) break;
-                    if (attempts > 200_000) {
-                        //if (attempts > 2) {
+                    if (attempts > 400_000) {
                         this.notifyOnFailedEvent(RestCaptchaTranslations[this._language].tooManyAttempts);
                         return;
                     }
                 }
 
-                // Everything fine
+                // Everything is fine
                 this.notifyOnSolvedEvent(token, solution);
             }
             else {
@@ -759,7 +758,7 @@ class RestCaptcha {
                         ${this._logo}    
                     </div>
                     <small id="${this._widgetId}-links" class="${this._htmlClasses.links}">
-                        ${this.renderExternalUrls()}
+                        ${this.createHtmlForExternalUrls()}
                     </small>
                 </div>
             </div>
@@ -793,7 +792,7 @@ class RestCaptcha {
                         ${this._logo}    
                     </div>
                     <small id="${this._widgetId}-links" class="${this._htmlClasses.links}">
-                        ${this.renderExternalUrls()}
+                        ${this.createHtmlForExternalUrls()}
                     </small>
                 </div>
             </div>
@@ -823,7 +822,7 @@ class RestCaptcha {
                         ${this._logo}    
                     </div>
                     <small id="${this._widgetId}-links" class="${this._htmlClasses.links}">
-                        ${this.renderExternalUrls()}
+                        ${this.createHtmlForExternalUrls()}
                     </small>
                 </div>
             </div>
@@ -854,7 +853,7 @@ class RestCaptcha {
                         ${this._logo}    
                     </div>
                     <small id="${this._widgetId}-links" class="${this._htmlClasses.links}">
-                        ${this.renderExternalUrls()}
+                        ${this.createHtmlForExternalUrls()}
                     </small>
                 </div>
             </div>
@@ -897,7 +896,7 @@ class RestCaptcha {
                         ${this._logo}    
                     </div>
                     <small id="${this._widgetId}-links" class="${this._htmlClasses.links}">
-                        ${this.renderExternalUrls()}
+                        ${this.createHtmlForExternalUrls()}
                     </small>
                 </div>
             </div>
@@ -918,9 +917,9 @@ class RestCaptcha {
     /**
      * Renders the list of external URLs as HTML anchor elements.
      *
-     * @returns {string} 
+     * @returns {string} - HTML-formatted string
      */
-    renderExternalUrls() {
+    createHtmlForExternalUrls() {
         return (this._externalLinks || [])
             .map(
                 (externalLink, idx) => `
@@ -997,7 +996,7 @@ class RestCaptcha {
     /**
      * Retrieves the value of the hidden token input element for this widget.
      *
-     * @returns {string|null} The token value if the element exists, otherwise `null`.
+     * @returns {string|null} - The token value if the element exists, otherwise `null`.
      */
     getToken() {
         return document.getElementById(`${this._widgetId}-token`)?.value;

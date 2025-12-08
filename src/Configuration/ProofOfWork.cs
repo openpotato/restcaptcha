@@ -29,23 +29,6 @@ namespace RestCaptcha
     public class ProofOfWork : ChallengeType
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ProofOfWork"/> class.
-        /// </summary>
-        /// <param name="algorithm">Used hash algorithm</param>
-        /// <param name="difficulty">Difficulty</param>
-        public ProofOfWork(ProofOfWorkAlgorithm algorithm, int difficulty)
-        {
-            Algorithm = algorithm;
-            Difficulty = difficulty;
-        }
-
-        /// <summary>
-        /// Type discriminator
-        /// </summary>
-        [JsonPropertyOrder(0), JsonInclude]
-        public string Type { get; } = TypeConsts.ProofOfWork;
-
-        /// <summary>
         /// Used hash algorithm
         /// </summary>
         [JsonPropertyOrder(1)]
@@ -54,7 +37,7 @@ namespace RestCaptcha
         /// <summary>
         /// Difficulty 
         /// </summary>
-        [JsonPropertyOrder(1)]
+        [JsonPropertyOrder(2)]
         public int Difficulty { get; set; } = 4;
 
         /// <summary>
@@ -63,7 +46,7 @@ namespace RestCaptcha
         /// <returns>A string</returns>
         public override string ToString()
         {
-            return $"{Type}:{Algorithm}:{Difficulty}";
+            return $"{TypeConsts.ProofOfWork}:{Algorithm}:{Difficulty}";
         }
     }
 }

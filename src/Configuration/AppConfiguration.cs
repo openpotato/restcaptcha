@@ -19,8 +19,6 @@
  */
 #endregion
 
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-
 namespace RestCaptcha
 {
     /// <summary>
@@ -29,9 +27,24 @@ namespace RestCaptcha
     public class AppConfiguration
     {
         /// <summary>
-        /// Challenge type
+        /// Map of behaviors by score ranges
         /// </summary>
-        public ChallengeType ChallengeType { get; set; } = new ProofOfWork(ProofOfWorkAlgorithm.SHA256, 4);
+        public List<Behavior> BehaviorMap { get; set; } = [
+            new Behavior() { 
+                MinRiskScore = 0, 
+                MaxRiskScore = 75, 
+                Action = ActionType.Challenge, 
+                ChallengeType = new Dictionary<string, object>
+                {
+                    [PropertyNames.Type] = TypeConsts.ProofOfWork,
+                    [PropertyNames.Algorithm] = TypeConsts.SHA256,
+                    [PropertyNames.Difficulty] = 4
+                } },
+            new Behavior() {
+                MinRiskScore = 75,
+                MaxRiskScore = 100,
+                Action = ActionType.Block }
+        ];
 
         /// <summary>
         /// Health check configuration
@@ -46,6 +59,11 @@ namespace RestCaptcha
         /// Random Password Generator like https://1password.com/password-generator
         /// </remarks>
         public string HMACKey { get; set; } = Guid.NewGuid().ToString("N");
+
+        /// <summary>
+        /// Check for abusive IPs
+        /// </summary>
+        public IpReputationCheckConfiguration IpReputationCheck { get; set; } = new();
 
         /// <summary>
         /// Maximun time-to-live of the unique nonce

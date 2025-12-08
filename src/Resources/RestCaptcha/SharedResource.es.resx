@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="blockedRequest" xml:space="preserve">
+    <value>La solicitud fue bloqueada</value>
+  </data>
   <data name="invalidDomainName" xml:space="preserve">
     <value>El nombre de dominio {0} no está registrado</value>
   </data>
@@ -128,6 +131,9 @@
   </data>
   <data name="invalidSiteSecret" xml:space="preserve">
     <value>El campo siteSecret no es válido</value>
+  </data>
+  <data name="missingBehavior" xml:space="preserve">
+    <value>No se define ningún comportamiento desafiante.</value>
   </data>
   <data name="missingSiteKey" xml:space="preserve">
     <value>El campo siteKey es obligatorio</value>
